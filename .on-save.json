@@ -1,0 +1,8 @@
+[
+  {
+    "destDir": "//OPENWRTRSP/mmc/tmp/ll",
+    "files": "**/*.{js,png}",
+    "showOutput": true,
+    "command": "D:/Dati/GoogleDrive/altro/ll/cpspecial.bat ${srcFile} ${destFile}"
+  }
+]
