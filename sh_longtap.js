@@ -8,4 +8,6 @@ else
     {
          weekday: 'narrow', year: 'numeric', month: 'narrow', day: 'numeric'
     }));
-alert(tag.k+") "+tag.kk+"\n"+tag.kkk+"\nDurata: "+tag.dur+"m\n\n"+adds);
+var kkk = tag.kkk?"\n"+tag.kkk:"";
+var dur = tag.dur?"\nDurata: "+tag.dur+"m":"";
+alert(tag.k+") "+tag.kk+kkk+dur+"\n\n"+adds);

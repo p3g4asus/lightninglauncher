@@ -28,11 +28,16 @@ self.doOnOk = function() {
                 var year = dates.substr(0,4);
                 if (parseInt(month)==this.data.month && parseInt(year)==this.data.year) {
                     var datef = day+"-"+month+"-"+year;
+                    var epobj = self.downloadUrl("https://feed.entertainment.tv.theplatform.eu/f/PR1GhC/mediaset-prod-ext-programs/guid/-/"+epid,
+                    function(s) {
+                        return JSON.parse(s);
+                    },null);
                     episodes.eps[epid] = {"date":datef,
                         "fvalue":epid,
                         "k":day,
-                        "kk":"Puntata "+datef,
-                        "kkk": "",
+                        "dur":Math.ceil(epobj.mediasetprogram$duration/60.0),
+                        "kk":epobj.title+" ("+datef+")",
+                        "kkk": epobj.description,
                         "st":0};
                     serv = [];
                     episodes.serv[epid] = serv;
