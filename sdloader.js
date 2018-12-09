@@ -118,7 +118,7 @@ var run = function() {
     if (updatedScripts.length > 0) Toast.makeText(context, "Updated scripts: " + JSON.stringify(updatedScripts), Toast.LENGTH_SHORT).show();
 };
 var data = getEvent().getData(),v = 0;
-if (!data || (v = parseInt(data))<=0)
+if (!data || (v = parseInt(data,10))<=0)
     run();
 else
     setTimeout(run,v);

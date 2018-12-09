@@ -324,11 +324,11 @@ self.showSettings = function(item) {
                 dt.ip = ip;
             else
                 fileds+=" ip";
-            if ((m = rePort.matcher(tcpPort)) && m.find() && (v = parseInt(tcpPort))<=65535)
+            if ((m = rePort.matcher(tcpPort)) && m.find() && (v = parseInt(tcpPort,10))<=65535)
                 dt.porttcp = v;
             else
                 fileds+=" tcpPort";
-            if ((m = rePort.matcher(udpPort)) && m.find() && (v = parseInt(udpPort))<=65535)
+            if ((m = rePort.matcher(udpPort)) && m.find() && (v = parseInt(udpPort,10))<=65535)
                 dt.portudp = v;
             else
                 fileds+=" udpPort";

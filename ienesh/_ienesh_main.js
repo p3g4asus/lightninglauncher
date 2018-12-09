@@ -170,11 +170,11 @@ self.showSettings = function(item) {
             var reNum = Pattern.compile("^[0-9]+$");
             var m,v;
             var fields = "";
-            if ((m = reNum.matcher(year)) && m.find() && (v = parseInt(year))>=2018)
+            if ((m = reNum.matcher(year)) && m.find() && (v = parseInt(year,10))>=2018)
                 dt.year = v;
             else
                 fileds+=" year";
-            if ((m = reNum.matcher(month)) && m.find() && (v = parseInt(month))<=12 && v>=1)
+            if ((m = reNum.matcher(month)) && m.find() && (v = parseInt(month,10))<=12 && v>=1)
                 dt.month = v;
             else
                 fileds+=" month";

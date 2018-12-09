@@ -36,20 +36,22 @@ function installer_load(id, name, flag, data, prepend) {
         pthfake = name.substr(0,idxslh);
     name = name.substr(idxslh+1);
 
-    idxslh = id.lastIndexOf('/');
-    if (idxslh<=0)
-        pthtrue = data.fold+'/';
-    else
-        pthtrue = id.substr(0,idxslh+1);
-    id = id.substr(idxslh+1);
-    if (idxslh<=0)
-        id = "_"+id;
+    if (data) {
+        idxslh = id.lastIndexOf('/');
+        if (idxslh<=0)
+            pthtrue = data.fold+'/';
+        else
+            pthtrue = id.substr(0,idxslh+1);
+        id = id.substr(idxslh+1);
+        if (idxslh<=0)
+            id = "_"+id;
+    }
 
     // load the script (if any) among the existing ones
     var script = getScriptByPathAndName(pthfake, name);
 
     // load the script text from the package
-    var script_text = (!prepend?"":prepend)+installer_read(pthtrue,id);
+    var script_text = (!prepend?"":prepend)+(data?installer_read(pthtrue,id):"");
     writeToLogFile("Searching base = "+pthfake+" name = "+name+" id = "+id+"\n", true);
     if(script == null) {
         // script not found: install it

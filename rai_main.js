@@ -1,75 +1,70 @@
 bindClass("java.util.regex.Matcher");
 bindClass("java.util.regex.Pattern");
-
-var MY_TAG_NAME = "llscript.crozzash";
-var crozzash = {};
-var self = crozzash;
+var MY_TAG_NAME = "llscript."+IDSH;
+var raish = {};
+var self = raish;
 
 self.doOnOk = function() {
-    var episodes = {};
-    var i;
-    var pre = "https://it.dplay.com";
-    var findEpisodes_line = function(s) {
-        var p,m,md,t = findEpisodes_line;
-        if (s.indexOf("e-single-episode-content")>=0) {
-            t.state = 1;
-            t.ep = {};
+    var i,k = 1;
+    var pre = "https://www.raiplay.it";
+    var eps = self.downloadUrl(pre+"/programmi/"+PROG_NAME+"/index.html?json",
+        function(s) {
+            return JSON.parse(s);
+        },null);
+    var episodes = [];
+    var processEp = function(ep) {
+        var dates = "";
+        var kkk = "";
+        var duration = "";
+        if (ep.datePublished) {
+            dates = ep.datePublished;
+            kkk = ep.subtitle;
+            duration = ep.duration;
         }
-        else if (t.state==1 && (p = Pattern.compile("<a href=\"([^\"]+)\"")) && (m = p.matcher(s)) && m.find()) {
-            t.state = 2;
-            t.ep.lnk = m.group(1);
+        else {
+            var epdetail = self.downloadUrl(pre+ep.pathID,
+                function(s) {
+                    return JSON.parse(s);
+                },null);
+            dates = epdetail.datePublished;
+            kkk = epdetail.description;
+            duration = epdetail.video.duration;
         }
-        else if (t.state==2 && (p = Pattern.compile("e-grid-episode__title\">([^<]+)")) && (m = p.matcher(s)) && m.find()) {
-            t.state = 3;
-            t.ep.k = m.group(1);
-        }
-        else if (t.state==3 && (p = Pattern.compile("e-grid-episode__episode-descr\">([^<]+)")) && (m = p.matcher(s)) && m.find()) {
-            t.state = 4;
-            t.ep.kk = m.group(1);
-        }
-        else if (t.state==4 && (p = Pattern.compile("e-grid-episode__date\">([^<]+)")) && (m = p.matcher(s)) && m.find() &&
-                (p = Pattern.compile("([0-9]+)/([0-9]+)/([0-9]+)")) && (md = p.matcher(m.group(1))) && md.find()) {
-            t.state = 5;
-            t.ep.datestring = m.group(1);
-            //t.ep.date = new Date(parseInt(md.group(3)),parseInt(md.group(2)),parseInt(md.group(1)));
-            var ym = md.group(3)+"_"+md.group(2);
-            if (!t.eps)
-                t.eps = {};
-            if (!t.eps[ym])
-                t.eps[ym] = {};
-            if (!t.eps[ym][t.ep.datestring])
-                t.eps[ym][t.ep.datestring] = [];
-            t.eps[ym][t.ep.datestring].push(t.ep);
-        }
-        else if (t.state==5 && (p = Pattern.compile("e-grid-episode__duration\">[\\s]*([0-9]+)")) && (m = p.matcher(s)) && m.find()) {
-            t.ep.dur = parseInt(m.group(1),10);
-            t.state = 6;
-        }
-    };
-    var findEpisodes_all = function(s) {
-        return findEpisodes_line.eps;
-    };
-    var epsobj = self.downloadUrl(pre+"/nove/fratelli-di-crozza/clips/",findEpisodes_all,findEpisodes_line);
-    var ym = self.data.year+"_"+("0" + self.data.month).slice(-2);
-    var findEpId = function (s) {
-        var p = Pattern.compile("embed/([0-9]+)");
-        var m = p.matcher(s);
-        if (m.find())
-            return m.group(1);
-        else
-            return null;
-    };
-    if (epsobj[ym]) {
-        Object.keys(epsobj[ym]).forEach(function(epdate){
-            var ep = epsobj[ym][epdate];
-            ep.forEach(function(serv) {
-                serv.id = self.downloadUrl(pre+serv.lnk,null,findEpId);
+
+        var day = dates.substr(0,2);
+        var month = dates.substr(3,2);
+        var year = dates.substr(6);
+        if (parseInt(month,10)==self.data.month && parseInt(year,10)==self.data.year) {
+            self.log("LNK","ep "+ep.titoloEpisodio+" dt = "+dates);
+            var reDur = Pattern.compile("^([0-9]+):([0-9]+):([0-9]+)$");
+            var m;
+            var dur;
+            if ((m = reDur.matcher(duration)) && m.find())
+                dur = Math.ceil((parseInt(m.group(1),10)*3600+parseInt(m.group(2),10)*60+parseInt(m.group(3),10))/60.0);
+            else
+                dur = 0;
+            episodes.push({
+                "lnk":ep.pathID,
+                "date":dates,
+                "k": parseInt(day,10),
+                "kk": ep.titoloEpisodio,
+                "kkk": kkk,
+                "dur":dur
             });
-        });
-        episodes = epsobj[ym];
+        }
+    };
+    for (i = eps.Blocks.length-1; i>=0; i--) {
+        var sets = eps.Blocks[i].Sets;
+        for (k = 0; k<sets.length; k++) {
+            var set = sets[k];
+            var lstep = self.downloadUrl(pre+set.url,
+                function(s) {
+                    return JSON.parse(s);
+                },null);
+            if (lstep && lstep.items)
+                lstep.items.forEach(processEp);
+        }
     }
-    else
-        episodes = {};
     return episodes;
 };
 
@@ -83,35 +78,8 @@ self.go = function(result) {
     try {
         var cont = this.createfolder(this.desktop,this.data.year+"-"+this.data.month);
 
-        Object.keys(result).forEach(function(key) {
-            var ep = result[key];
-            var p = Pattern.compile("([0-9]+)/([0-9]+)/([0-9]+)"), m = p.matcher(key);
-            m.find();
-            var cont2 = self.createfolder(cont,"Servizi "+m.group(1));
-            var i = 1,arreps = [];
-            ep.forEach(function(serv) {
-                var serv2 = {
-                    "id":serv.id,
-                    "lnk":serv.lnk,
-                    "k":""+i,
-                    "kk":serv.k,
-                    "kkk":serv.kk,
-                    "dur":serv.dur,
-                    "st":0
-                };
-                arreps.push(serv2);
-                self.createShortcut(serv2,cont2);
-                i++;
-            });
-
-            self.createShortcut({
-                "eps":arreps,
-                "k":"Pls",
-                "kk":"Puntata "+key,
-                "kkk":"",
-                "st":0,
-                "outfile":self.folddata.fold+"/pls/"+m.group(3)+"-"+m.group(2)+"-"+m.group(1)+".m3u8"
-            },cont2);
+        result.forEach(function(ep) {
+            self.createShortcut(ep,cont);
         });
     }
     catch(err) {
@@ -154,7 +122,7 @@ self.showSettings = function(item) {
             var reNum = Pattern.compile("^[0-9]+$");
             var m,v;
             var fields = "";
-            if ((m = reNum.matcher(year)) && m.find() && (v = parseInt(year,10))>=2018)
+            if ((m = reNum.matcher(year)) && m.find() && (v = parseInt(year,10))>=2015)
                 dt.year = v;
             else
                 fileds+=" year";
