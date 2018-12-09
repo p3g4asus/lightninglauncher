@@ -16,7 +16,7 @@ function installer_checkversion() {
 
 function installer_read(fold,id) {
     try {
-        var r = new BufferedReader(new FileReader(fold+"/_"+id+".js"));
+        var r = new BufferedReader(new FileReader(fold+id+".js"));
         var s = new StringBuilder();
         var l;
         while ((l = r.readLine()) != null) s.append(l + "\n");
@@ -27,18 +27,34 @@ function installer_read(fold,id) {
     }
 }
 
-function installer_load(id, name, flag, data) {
+function installer_load(id, name, flag, data, prepend) {
+
+    var idxslh = name.lastIndexOf('/');
+    if (idxslh<=0)
+        pthfake = '/';
+    else
+        pthfake = name.substr(0,idxslh);
+    name = name.substr(idxslh+1);
+
+    idxslh = id.lastIndexOf('/');
+    if (idxslh<=0)
+        pthtrue = data.fold+'/';
+    else
+        pthtrue = id.substr(0,idxslh+1);
+    id = id.substr(idxslh+1);
+    if (idxslh<=0)
+        id = "_"+id;
 
     // load the script (if any) among the existing ones
-    var script = getScriptByPathAndName(data.base, name);
+    var script = getScriptByPathAndName(pthfake, name);
 
     // load the script text from the package
-    var script_text = installer_read(data.fold,id);
-    writeToLogFile("Searching base = "+data.base+" name = "+name+" id = "+id+" "+script_text+"\n", true);
+    var script_text = (!prepend?"":prepend)+installer_read(pthtrue,id);
+    writeToLogFile("Searching base = "+pthfake+" name = "+name+" id = "+id+"\n", true);
     if(script == null) {
         // script not found: install it
         writeToLogFile(name+" Not found: creating\n", true);
-        script = createScript(data.base, name, script_text , flag);
+        script = createScript(pthfake, name, script_text , flag);
     } else {
         writeToLogFile(name+" FOUND\n", true);
         // the script already exists: update its text

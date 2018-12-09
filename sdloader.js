@@ -56,11 +56,11 @@ function updateScripts(folder) {
     var folderPath = folder.getPath();
     var basePath = folderPath.substring(scriptFolder.length);
     var processScript = function(baseName,tagName,lmdate) {
-        writeToLogFile("Loading bn = "+baseName+" tag = "+tagName+" dt = "+lmdate+"\n", true);
+        writeToLogFile("Loading bn = "+baseName+" bp = "+basePath+" tag = "+tagName+" dt = "+lmdate+"\n", true);
         var tagScript = getScriptByPathAndName(basePath, tagName);
         var tagdate;
         if (tagScript == null) {
-            writeToLogFile(tagName+" not found creating\n", true);
+            writeToLogFile("sdloader: "+tagName+" not found creating\n", true);
             Toast.makeText(context, "creating new script: " + tagName, Toast.LENGTH_SHORT).show();
             tagdate = 0;
         } else {
@@ -75,7 +75,7 @@ function updateScripts(folder) {
                 installScript = tagScript;
             var txt;
             installScript.setText(txt = read(folderPath + "/" + baseName + ".js"));
-            writeToLogFile(baseName+" Script "+txt+"\n", true);
+            //writeToLogFile(baseName+" Script "+txt+"\n", true);
             if (tagName!=baseName) {
                 if (tagScript==null)
                     tagScript = createScript(basePath, tagName, "", 0);

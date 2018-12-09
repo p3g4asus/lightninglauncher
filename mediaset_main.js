@@ -1,25 +1,32 @@
 bindClass("java.util.regex.Matcher");
 bindClass("java.util.regex.Pattern");
-var MY_TAG_NAME = "llscript.maidiretalksh";
-var maidiretalksh = {};
-var self = maidiretalksh;
+var MY_TAG_NAME = "llscript."+IDSH;
+var mediasetsh = {};
+var self = mediasetsh;
 
 self.doOnOk = function() {
     var episodes = {"eps":{},"serv":{}};
     var i,k = 1;
-    var pre = "https://feed.entertainment.tv.theplatform.eu/f/PR1GhC/mediaset-prod-all-programs?byCustomValue={brandId}{100000836},{subBrandId}{100001195}&sort=mediasetprogram$publishInfo_lastPublished|desc&count=true&entries=true";
-    var eps = self.downloadUrl(pre,
-    function(s) {
-        return JSON.parse(s);
-    },null);
-    for (i = eps.entries.length; i>=0; i--) {
+    var pre = "https://feed.entertainment.tv.theplatform.eu/f/PR1GhC/mediaset-prod-all-programs?byCustomValue={brandId}{"+BRAND_ID+"},{subBrandId}{"+SUBBRAND_ID+"}&sort=mediasetprogram$publishInfo_lastPublished|desc&count=true&entries=true&startIndex=";
+    var entries = [];
+    while (true) {
+        var eps = self.downloadUrl(pre+k,
+        function(s) {
+            return JSON.parse(s);
+        },null);
+        k+=100;
+        entries = entries.concat(eps.entries);
+        if (eps.entryCount<100)
+            break;
+    }
+    for (i = entries.length; i>=0; i--) {
         try {
-            var entry = eps.entries[i];
+            var entry = entries[i];
             var epid = entry.mediasetprogram$episodeId;
             var media = entry.media[0];
             var serv = null;
             if (!episodes.eps[epid]) {
-                var datei = media.availableDate;
+                var datei = entry.mediasetprogram$publishInfo_lastPublished;
                 var dateo = new Date();
                 dateo.setTime(datei);
                 var dates = dateo.toJSON().substr(0,10);
