@@ -20,7 +20,7 @@ self.doOnOk = function() {
                 try {
                     var res = JSON.parse(s);
                     if (!self.data.outfile) {
-                        self.data.kkk = res.description;
+                        self.data.kkk = res.subtitle+"\n"+res.description;
                         var reDur = Pattern.compile("^([0-9]+):([0-9]+):([0-9]+)$");
                         var m;
                         var dur;

@@ -27,7 +27,7 @@ self.doOnOk = function() {
                     return JSON.parse(s);
                 },null);
             dates = epdetail.datePublished;
-            kkk = epdetail.description;
+            kkk = epdetail.subtitle+"\n"+epdetail.description;
             duration = epdetail.video.duration;
         }
 
