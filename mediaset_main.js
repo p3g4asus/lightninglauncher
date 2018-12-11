@@ -80,7 +80,7 @@ self.doOnOk = function() {
         if (eps.entryCount<100)
             break;
     }
-    for (i = entries.length; i>=0; i--) {
+    for (i = entries.length-1; i>=0; i--) {
         try {
             var entry = entries[i];
             var epid = entry.mediasetprogram$episodeId;
@@ -99,7 +99,7 @@ self.doOnOk = function() {
                     },null);
                     mainObj = {"date":datefull.datef,
                         "fvalue":epid,
-                        "k":day,
+                        "k":datefull.day,
                         "dur":Math.ceil(epobj.mediasetprogram$duration/60.0),
                         "kk":epobj.title+" ("+datefull.datef+")",
                         "kkk":epobj.description,
