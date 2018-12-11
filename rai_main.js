@@ -183,14 +183,15 @@ self.loadData = function() {
     self.script_longtap = getScriptByPathAndName(null,"sh_longtap");
     self.script_swiperight = getScriptByPathAndName(null,"sh_swiperight");
     var tag = item.getTag(MY_TAG_NAME);
-    if(tag == null) {
+    var dt;
+    if(tag == null || !(dt = JSON.parse(tag)).filter) {
         this.log("ERR0","TAG not present: creating");
         this.data = {
             "filter":""
         };
     } else {
         this.log("ERR0","TAG PRESENT: "+tag);
-        this.data = JSON.parse(tag);
+        this.data = dt;
     }
     this.showSettings(item);
 };
