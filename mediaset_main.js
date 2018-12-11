@@ -31,17 +31,23 @@ self.passesFilter = function(pObj,ep,epdetail) {
 };
 
 self.filterOk = function(filters) {
-    var p = Pattern.compile("^([0-9]+)/([0-9]+)$");
+    var p = Pattern.compile("^(?:([0-9]+)\-([0-9]+)/)?([0-9]+)/([0-9]+)$");
     var m = p.matcher(filters);
     var mo,ye;
     if (m.find() &&
-        (mo = parseInt(m.group(1),10))>=1 && mo<=12 &&
-        (ye = parseInt(m.group(2),10))>=1990
-    )
+        (mo = parseInt(m.group(3),10))>=1 && mo<=12 &&
+        (ye = parseInt(m.group(4),10))>=1990
+    ) {
+        var b,sb;
+        if ((b = m.group(1)) && (sb = m.group(2))) {
+            BRAND_ID = parseInt(b,10);
+            SUBBRAND_ID = parseInt(sb,10);
+        }
         return {
             "month":mo,
             "year":ye
         };
+    }
     else
         return null;
 };
