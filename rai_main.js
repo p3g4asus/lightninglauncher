@@ -13,6 +13,10 @@ self.getKK = function(ep,epdetail) {
     return ep.titoloEpisodio;
 };
 
+self.getFolderTitle = function() {
+    return self.data.o.year+"-"+self.data.o.month;
+};
+
 self.getKKK = function(ep,epdetail) {
     if (epdetail)
         return epdetail.subtitle+"\n"+epdetail.description;
@@ -79,7 +83,7 @@ self.doOnOk = function() {
             "lnk":ep.pathID,
             "date":dates,
             "k": self.getK(ep,epdetail),
-            "kk": getKK(ep,epdetail),
+            "kk": self.getKK(ep,epdetail),
             "kkk": self.getKKK(ep,epdetail),
             "dur":dur
         };
@@ -111,7 +115,7 @@ self.addEventHandlers = function(ed) {
 
 self.go = function(result) {
     try {
-        var cont = this.createfolder(this.desktop,this.data.year+"-"+this.data.month);
+        var cont = this.createfolder(this.desktop,self.getFolderTitle());
 
         result.forEach(function(ep) {
             self.createShortcut(ep,cont);
