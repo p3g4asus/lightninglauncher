@@ -133,7 +133,7 @@ self.showSettings = function(item) {
 
     // create various preferences
     var prefMainCategory = new LLPreferenceCategory(0, "Main");
-    var preFilter = new LLPreferenceText(0, "Filtro", dt.filter, dt.filter);
+    var prefFilter = new LLPreferenceText(0, "Filtro", dt.filter, dt.filter);
 
     // create the list view, it will hold preferences created above
     var listView = new LLPreferenceListView(context, null);
