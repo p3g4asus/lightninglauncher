@@ -4,8 +4,69 @@ var MY_TAG_NAME = "llscript."+IDSH;
 var mediasetsh = {};
 var self = mediasetsh;
 
+self.getK = function(ep,epdetail) {
+    if (epdetail)
+        return epdetail.idx+"";
+    else if (ep.tvSeasonNumber)
+        return ep.tvSeasonNumber+"x"+(("0" + ep.tvSeasonEpisodeNumber).slice(-2));
+    else
+        return ep.title;
+};
+
+self.getKK = function(ep,epdetail) {
+    return ep.title;
+};
+
+self.getFolderTitle = function() {
+    return self.data.o.year+"-"+self.data.o.month;
+};
+
+self.getKKK = function(ep,epdetail) {
+    return ep.description;
+};
+
+self.passesFilter = function(pObj,ep,epdetail) {
+    var datefull = self.processDateI(ep.mediasetprogram$publishInfo_lastPublished);
+    return parseInt(datefull.month,10)==self.data.o.month && parseInt(datefull.year,10)==self.data.o.year;
+};
+
+self.filterOk = function(filters) {
+    var p = Pattern.compile("^([0-9]+)/([0-9]+)$");
+    var m = p.matcher(filters);
+    var mo,ye;
+    if (m.find() &&
+        (mo = parseInt(m.group(1),10))>=1 && mo<=12 &&
+        (ye = parseInt(m.group(2),10))>=1990
+    )
+        return {
+            "month":mo,
+            "year":ye
+        };
+    else
+        return null;
+};
+
+self.processDateI = function (datei) {
+    var dateo = new Date();
+    dateo.setTime(datei);
+    var dates = dateo.toJSON().substr(0,10);
+    var day = dates.substr(8,2);
+    var month = dates.substr(5,2);
+    var year = dates.substr(0,4);
+    var datef = day+"-"+month+"-"+year;
+    return {
+        "dates":dates,
+        "dateo":dateo,
+        "datei":datei,
+        "datef":datef,
+        "day":day,
+        "month":month,
+        "year":year
+    };
+};
+
 self.doOnOk = function() {
-    var episodes = {"eps":{},"serv":{}};
+    var episodes = {"eps":{},"serv":{}},bufferep = {};
     var i,k = 1;
     var pre = "https://feed.entertainment.tv.theplatform.eu/f/PR1GhC/mediaset-prod-all-programs?byCustomValue={brandId}{"+BRAND_ID+"},{subBrandId}{"+SUBBRAND_ID+"}&sort=mediasetprogram$publishInfo_lastPublished|desc&count=true&entries=true&startIndex=";
     var entries = [];
@@ -23,50 +84,57 @@ self.doOnOk = function() {
         try {
             var entry = entries[i];
             var epid = entry.mediasetprogram$episodeId;
+            if (!epid)
+                epid = media.guid;
             var media = entry.media[0];
-            var serv = null;
-            if (!episodes.eps[epid]) {
-                var datei = entry.mediasetprogram$publishInfo_lastPublished;
-                var dateo = new Date();
-                dateo.setTime(datei);
-                var dates = dateo.toJSON().substr(0,10);
-                var day = dates.substr(8,2);
-                var month = dates.substr(5,2);
-                var year = dates.substr(0,4);
-                if (parseInt(month,10)==this.data.month && parseInt(year,10)==this.data.year) {
-                    var datef = day+"-"+month+"-"+year;
+            var mainObj = null;
+            if (!epid)
+                epid = media.guid;
+            if (!bufferep[epid]) {
+                if (entry.mediasetprogram$episodeId) {
+                    var datefull = self.processDateI(entry.mediasetprogram$publishInfo_lastPublished);
                     var epobj = self.downloadUrl("https://feed.entertainment.tv.theplatform.eu/f/PR1GhC/mediaset-prod-ext-programs/guid/-/"+epid,
                     function(s) {
                         return JSON.parse(s);
                     },null);
-                    episodes.eps[epid] = {"date":datef,
+                    mainObj = {"date":datefull.datef,
                         "fvalue":epid,
                         "k":day,
                         "dur":Math.ceil(epobj.mediasetprogram$duration/60.0),
-                        "kk":epobj.title+" ("+datef+")",
-                        "kkk": epobj.description,
+                        "kk":epobj.title+" ("+datefull.datef+")",
+                        "kkk":epobj.description,
+                        "idx":1,
                         "st":0};
-                    serv = [];
-                    episodes.serv[epid] = serv;
-                    k = 1;
                 }
-                else
-                    continue;
             }
-            else {
-                serv = episodes.serv[epid];
-                k++;
+            else if (episodes.serv[epid]) {
+                mainObj = episodes.eps[epid];
+                mainObj.idx++;
             }
-            serv.push({
+            else
+                continue;
+            var pObj = {
                 "id":media.id,
                 "lnk":entry.mediasetprogram$videoPageUrl,
                 "fvalue":media.guid,
-                "k":""+k,
-                "kk":entry.title,
-                "kkk":entry.description,
+                "k":self.getK(entry,mainObj),
+                "kk":self.getKK(entry,mainObj),
+                "kkk":self.getKKK(entry,mainObj),
                 "dur":Math.ceil(entry.mediasetprogram$duration/60.0),
                 "st":0
-            });
+            };
+            if (self.passesFilter(pObj,entry,mainObj)) {
+                if (mainObj) {
+                    episodes.eps[epid] = mainObj;
+                    if (episodes.serv[epid])
+                        episodes.serv[epid].push(pObj);
+                    else
+                        episodes.serv[epid] = [pObj];
+                }
+                else
+                    episodes.eps[epid] = mainObj = pObj;
+            }
+            bufferep[epid] = mainObj;
         }
         catch (errsingle) {
             self.log("ERR","findInfo err "+errsingle.message);
@@ -83,23 +151,24 @@ self.addEventHandlers = function(ed) {
 
 self.go = function(result) {
     try {
-        var cont = this.createfolder(this.desktop,this.data.year+"-"+this.data.month);
+        var cont = this.createfolder(this.desktop,self.getFolderTitle());
 
         Object.keys(result.eps).forEach(function(key) {
             var ep = result.eps[key];
-            var cont2 = self.createfolder(cont,"Servizi "+ep.k);
             self.createShortcut(ep,cont);
-            var i = 1,arreps = [];
-            result.serv[key].forEach(function(serv) {
-                self.createShortcut(serv,cont2);
-            });
-            self.createShortcut({
-                "eps":result.serv[key],
-                "k":"Pls",
-                "kk":"Puntata "+ep.date,
-                "st":0,
-                "outfile":self.folddata.fold+"/pls/"+ep.date+".m3u8"
-            },cont2);
+            if (result.serv[key]) {
+                var cont2 = self.createfolder(cont,"Servizi "+ep.k);
+                result.serv[key].forEach(function(serv) {
+                    self.createShortcut(serv,cont2);
+                });
+                self.createShortcut({
+                    "eps":result.serv[key],
+                    "k":"Pls",
+                    "kk":"Puntata "+ep.date,
+                    "st":0,
+                    "outfile":self.folddata.fold+"/pls/"+ep.date+".m3u8"
+                },cont2);
+            }
         });
     }
     catch(err) {
@@ -118,8 +187,7 @@ self.showSettings = function(item) {
 
     // create various preferences
     var prefMainCategory = new LLPreferenceCategory(0, "Main");
-    var prefMonth = new LLPreferenceText(0, "Month", dt.month, dt.month);
-    var prefYear = new LLPreferenceText(0, "Year", dt.year, dt.year);
+    var prefFilter = new LLPreferenceText(0, "Filtro", dt.filter, dt.filter);
 
     // create the list view, it will hold preferences created above
     var listView = new LLPreferenceListView(context, null);
@@ -127,8 +195,7 @@ self.showSettings = function(item) {
     // assign preferences to the list view
     listView.setPreferences([
         prefMainCategory,
-            prefMonth,
-            prefYear
+            prefFilter
     ]);
 
     // create a dialog and set the list view as the main content view
@@ -137,26 +204,19 @@ self.showSettings = function(item) {
     builder.setTitle("Settings");
     builder.setPositiveButton("Save",{onClick:function(dialog,id) {
         try {
-            var year = prefYear.getValue();
-            var month = prefMonth.getValue();
-            var reNum = Pattern.compile("^[0-9]+$");
-            var m,v;
-            var fields = "";
-            if ((m = reNum.matcher(year)) && m.find() && (v = parseInt(year,10))>=2018)
-                dt.year = v;
-            else
-                fileds+=" year";
-            if ((m = reNum.matcher(month)) && m.find() && (v = parseInt(month,10))<=12 && v>=1)
-                dt.month = v;
-            else
-                fileds+=" month";
-            if (fields)
-                alert("Fields invalid: "+fields);
-            fields = JSON.stringify(dt);
-            self.log("ERR0","saving tag "+fields);
-            item.setTag(MY_TAG_NAME,fields);
-            dialog.dismiss();
-            self.startWorking();
+            var filterObj;
+            if (!(filterObj = self.filterOk(dt.filter = prefFilter.getValue()))) {
+                alert("Filter parameter invalid!! ");
+                dialog.dismiss();
+            }
+            else {
+                dt.o = filterObj;
+                var fields = JSON.stringify(dt);
+                self.log("ERR0","saving tag "+fields);
+                item.setTag(MY_TAG_NAME,fields);
+                dialog.dismiss();
+                self.startWorking();
+            }
         }
         catch (err) {
             self.log("ERR0","gui err "+err.message);
@@ -177,15 +237,15 @@ self.loadData = function() {
     self.script_longtap = getScriptByPathAndName(null,"sh_longtap");
     self.script_swiperight = getScriptByPathAndName(null,"sh_swiperight");
     var tag = item.getTag(MY_TAG_NAME);
-    if(tag == null) {
+    var dt;
+    if(tag == null || !(dt = JSON.parse(tag)).filter) {
         this.log("ERR0","TAG not present: creating");
         this.data = {
-            year: 2018,       // by how much to increment the value
-            month: 4
+            "filter":"4/2018"
         };
     } else {
         this.log("ERR0","TAG PRESENT: "+tag);
-        this.data = JSON.parse(tag);
+        this.data = dt;
     }
     this.showSettings(item);
 };

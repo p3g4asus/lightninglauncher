@@ -191,7 +191,7 @@ self.loadData = function() {
     if(tag == null || !(dt = JSON.parse(tag)).filter) {
         this.log("ERR0","TAG not present: creating");
         this.data = {
-            "filter":""
+            "filter":"4/2018"
         };
     } else {
         this.log("ERR0","TAG PRESENT: "+tag);
