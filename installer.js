@@ -68,6 +68,11 @@ function installer_load(id, name, flag, data, prepend) {
     return script;
 }
 
+function installer_string_script_import(scrpath,scrname) {
+    return "var script = getScriptByPathAndName("+(scrpath?"'"+scrpath+"'":"null")+",'"+scrname+"');\n"+
+        "eval(script.getText());\n";
+}
+
 function installer_sh_runscript(suffix,evt,script,data,folddata) {
     if ((scr = getActiveScreen()) || (scr = getHomeScreen())) {
         var cont = scr.getCurrentDesktop();

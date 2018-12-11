@@ -4,6 +4,45 @@ var MY_TAG_NAME = "llscript."+IDSH;
 var raish = {};
 var self = raish;
 
+self.getK = function(ep,epdetail) {
+    var e = epdetail?epdetail:ep;
+    return parseInt(e.datePublished.substr(0,2),10);
+};
+
+self.getKK = function(ep,epdetail) {
+    return ep.titoloEpisodio;
+};
+
+self.getKKK = function(ep,epdetail) {
+    if (epdetail)
+        return epdetail.subtitle+"\n"+epdetail.description;
+    else
+        return ep.subtitle;
+};
+
+self.passesFilter = function(epObj,ep,epdetail) {
+    var dates = epObj.date;
+    var month = dates.substr(3,2);
+    var year = dates.substr(6);
+    return parseInt(month,10)==self.data.o.month && parseInt(year,10)==self.data.o.year;
+};
+
+self.filterOk = function(filters) {
+    var p = Pattern.compile("^([0-9]+)/([0-9]+)$");
+    var m = p.matcher(filters);
+    var mo,ye;
+    if (m.find() &&
+        (mo = parseInt(m.group(1),10))>=1 && mo<=12 &&
+        (ye = parseInt(m.group(2),10))>=1990
+    )
+        return {
+            "month":mo,
+            "year":ye
+        };
+    else
+        return null;
+};
+
 self.doOnOk = function() {
     var i,k = 1;
     var pre = "https://www.raiplay.it";
@@ -16,41 +55,37 @@ self.doOnOk = function() {
         var dates = "";
         var kkk = "";
         var duration = "";
+        var epdetail = null;
         if (ep.datePublished) {
             dates = ep.datePublished;
-            kkk = ep.subtitle;
             duration = ep.duration;
         }
         else {
-            var epdetail = self.downloadUrl(pre+ep.pathID,
+            epdetail = self.downloadUrl(pre+ep.pathID,
                 function(s) {
                     return JSON.parse(s);
                 },null);
             dates = epdetail.datePublished;
-            kkk = epdetail.subtitle+"\n"+epdetail.description;
             duration = epdetail.video.duration;
         }
-
-        var day = dates.substr(0,2);
-        var month = dates.substr(3,2);
-        var year = dates.substr(6);
-        if (parseInt(month,10)==self.data.month && parseInt(year,10)==self.data.year) {
-            self.log("LNK","ep "+ep.titoloEpisodio+" dt = "+dates);
-            var reDur = Pattern.compile("^([0-9]+):([0-9]+):([0-9]+)$");
-            var m;
-            var dur;
-            if ((m = reDur.matcher(duration)) && m.find())
-                dur = Math.ceil((parseInt(m.group(1),10)*3600+parseInt(m.group(2),10)*60+parseInt(m.group(3),10))/60.0);
-            else
-                dur = 0;
-            episodes.push({
-                "lnk":ep.pathID,
-                "date":dates,
-                "k": parseInt(day,10),
-                "kk": ep.titoloEpisodio,
-                "kkk": kkk,
-                "dur":dur
-            });
+        var reDur = Pattern.compile("^([0-9]+):([0-9]+):([0-9]+)$");
+        var m;
+        var dur;
+        if ((m = reDur.matcher(duration)) && m.find())
+            dur = Math.ceil((parseInt(m.group(1),10)*3600+parseInt(m.group(2),10)*60+parseInt(m.group(3),10))/60.0);
+        else
+            dur = 0;
+        var epObj = {
+            "lnk":ep.pathID,
+            "date":dates,
+            "k": self.getK(ep,epdetail),
+            "kk": getKK(ep,epdetail),
+            "kkk": self.getKKK(ep,epdetail),
+            "dur":dur
+        };
+        if (self.passesFilter(epObj,ep,epdetail)) {
+            self.log("LNK","ep "+epObj.kk+" dt = "+dates);
+            episodes.push(epObj);
         }
     };
     for (i = eps.Blocks.length-1; i>=0; i--) {
@@ -98,8 +133,7 @@ self.showSettings = function(item) {
 
     // create various preferences
     var prefMainCategory = new LLPreferenceCategory(0, "Main");
-    var prefMonth = new LLPreferenceText(0, "Month", dt.month, dt.month);
-    var prefYear = new LLPreferenceText(0, "Year", dt.year, dt.year);
+    var preFilter = new LLPreferenceText(0, "Filtro", dt.filter, dt.filter);
 
     // create the list view, it will hold preferences created above
     var listView = new LLPreferenceListView(context, null);
@@ -107,8 +141,7 @@ self.showSettings = function(item) {
     // assign preferences to the list view
     listView.setPreferences([
         prefMainCategory,
-            prefMonth,
-            prefYear
+            prefFilter
     ]);
 
     // create a dialog and set the list view as the main content view
@@ -117,26 +150,19 @@ self.showSettings = function(item) {
     builder.setTitle("Settings");
     builder.setPositiveButton("Save",{onClick:function(dialog,id) {
         try {
-            var year = prefYear.getValue();
-            var month = prefMonth.getValue();
-            var reNum = Pattern.compile("^[0-9]+$");
-            var m,v;
-            var fields = "";
-            if ((m = reNum.matcher(year)) && m.find() && (v = parseInt(year,10))>=2015)
-                dt.year = v;
-            else
-                fileds+=" year";
-            if ((m = reNum.matcher(month)) && m.find() && (v = parseInt(month,10))<=12 && v>=1)
-                dt.month = v;
-            else
-                fileds+=" month";
-            if (fields)
-                alert("Fields invalid: "+fields);
-            fields = JSON.stringify(dt);
-            self.log("ERR0","saving tag "+fields);
-            item.setTag(MY_TAG_NAME,fields);
-            dialog.dismiss();
-            self.startWorking();
+            var filterObj;
+            if (!(filterObj = self.filterOk(dt.filter = prefFilter.getValue()))) {
+                alert("Filter parameter invalid!! ");
+                dialog.dismiss();
+            }
+            else {
+                dt.o = filterObj;
+                var fields = JSON.stringify(dt);
+                self.log("ERR0","saving tag "+fields);
+                item.setTag(MY_TAG_NAME,fields);
+                dialog.dismiss();
+                self.startWorking();
+            }
         }
         catch (err) {
             self.log("ERR0","gui err "+err.message);
@@ -160,8 +186,7 @@ self.loadData = function() {
     if(tag == null) {
         this.log("ERR0","TAG not present: creating");
         this.data = {
-            year: 2018,       // by how much to increment the value
-            month: 4
+            "filter":""
         };
     } else {
         this.log("ERR0","TAG PRESENT: "+tag);
