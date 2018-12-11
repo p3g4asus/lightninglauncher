@@ -90,7 +90,7 @@ self.doOnOk = function() {
             var mainObj = null;
             if (!epid)
                 epid = media.guid;
-            if (!bufferep[epid]) {
+            if (typeof bufferep[epid] == "undefined") {
                 if (entry.mediasetprogram$episodeId) {
                     var datefull = self.processDateI(entry.mediasetprogram$publishInfo_lastPublished);
                     var epobj = self.downloadUrl("https://feed.entertainment.tv.theplatform.eu/f/PR1GhC/mediaset-prod-ext-programs/guid/-/"+epid,
