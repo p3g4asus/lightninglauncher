@@ -2,6 +2,7 @@ bindClass("java.lang.Thread");
 bindClass("java.lang.Runnable");
 bindClass("android.os.Handler");
 bindClass("android.os.Looper");
+bindClass("android.content.ComponentName");
 bindClass("java.net.URL");
 bindClass("java.net.InetAddress");
 bindClass("java.net.Socket");
@@ -306,6 +307,14 @@ self.startGenericSh = function(urlarr,pkg) {
         }
         var uri = Uri.parse(url);
         var vlcIntent = new Intent(Intent.ACTION_VIEW);
+        var idx,cls;
+        if ((idx = pkg.indexOf("/"))>0) {
+            cls = pkg.substr(idx+1);
+            pkg = pkg.substr(0,idx);
+            vlcIntent.setComponent(new ComponentName(pkg, cls));
+        }
+        else
+            cls = '';
         vlcIntent.setPackage(pkg);
         vlcIntent.setDataAndTypeAndNormalize(uri, "video/*");
         context.startActivity(vlcIntent);
