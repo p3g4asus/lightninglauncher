@@ -2,6 +2,7 @@ bindClass("android.app.AlertDialog");
 bindClass("net.pierrox.lightning_launcher.prefs.LLPreferenceListView");
 bindClass("net.pierrox.lightning_launcher.prefs.LLPreferenceCategory");
 bindClass("net.pierrox.lightning_launcher.prefs.LLPreferenceList");
+bindClass("net.pierrox.lightning_launcher.prefs.LLPreferenceText");
 
 var showSettings = function() {
     var suffixitem = getEvent().getItem();
@@ -25,6 +26,7 @@ var showSettings = function() {
         // create various preferences
         var prefMainCategory = new LLPreferenceCategory(0, "Main");
         var prefPlayer = new LLPreferenceList(0, "Player", arrplayers, !dt.playeri?0:dt.playeri, 0);
+        var prefCustom = new LLPreferenceText(0, "Custom", dt.players, dt.players);
 
         // create the list view, it will hold preferences created above
         var listView = new LLPreferenceListView(context, null);
@@ -32,7 +34,8 @@ var showSettings = function() {
         // assign preferences to the list view
         listView.setPreferences([
             prefMainCategory,
-                prefPlayer
+                prefPlayer,
+                prefCustom
         ]);
 
         // create a dialog and set the list view as the main content view
@@ -48,7 +51,8 @@ var showSettings = function() {
             catch (err) {
                 dt.playeri = 0;
             }
-            dt.players = arrplayers[dt.playeri];
+            if ((dt.players = prefCustom.getValue()).indexOf(".")<0)
+                dt.players = arrplayers[dt.playeri];
             item.setTag(suffix,JSON.stringify(dt));
             dialog.dismiss();
         }});

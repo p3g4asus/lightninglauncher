@@ -288,6 +288,32 @@ self.startVlcSh = function(urlarr) {
     //item.launch();
 };
 
+self.startGenericSh = function(urlarr,pkg) {
+    var screen = getActiveScreen();
+    var context = screen.getContext();
+    if (urlarr) {
+        var url,title;
+        if (urlarr.length>1) {
+            var bw = new PrintWriter(new BufferedWriter(new FileWriter(self.data.outfile)));
+            bw.write(convertToM3uPlaylist(urlarr,self.data.kk));
+            bw.close();
+            url = self.data.outfile;
+            title = self.data.kk;
+        }
+        else {
+            url = urlarr[0].url;
+            title = urlarr[0].title;
+        }
+        var uri = Uri.parse(url);
+        var vlcIntent = new Intent(Intent.ACTION_VIEW);
+        vlcIntent.setPackage(pkg);
+        vlcIntent.setDataAndTypeAndNormalize(uri, "video/*");
+        context.startActivity(vlcIntent);
+    }
+    //item.setIntent(vlcIntent);
+    //item.launch();
+};
+
 self.manageSh = function(res,suffix) {
     if (res) {
         self.data.st = new Date().getTime();
@@ -306,8 +332,10 @@ self.manageSh = function(res,suffix) {
         }
         if (players=="mx")
             self.startMxSh(res);
-        else
+        else if (players=="vlc")
             self.startVlcSh(res);
+        else if (players.indexOf(".")>=0)
+            self.startGenericSh(res,players);
     } else {
         self.log("ERR", "runnsh No url");
     }
