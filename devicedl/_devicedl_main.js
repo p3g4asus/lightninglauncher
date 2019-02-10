@@ -70,13 +70,14 @@ self.getIconImage = function(dev, action) {
         var generated = "generated/";
         var fim, fom;
         var tp = dev.type.substr(6).toLowerCase();
-        if (dev.type == "DeviceRM" || dev.type == "DeviceAllOne" || dev.type == "DeviceCT10") {
+        if (dev.type == "DeviceRM" || dev.type == "DeviceAllOne" || dev.type == "DeviceCT10" ||
+            dev.type == "DeviceUpnpIRTA2" || dev.type == "DeviceUpnpIRRC" || dev.type == "DeviceSamsungCtl") {
             var p, m;
             action = action.toLowerCase();
             if (action.charAt(0) == '@')
                 action = action.substr(1);
-            if ((p = Pattern.compile("v[0-9]+([\\-\\+])")) && (m = p.matcher(action)) && m.find())
-                action = 'v' + m.group(1);
+            if ((p = Pattern.compile("^([^0-9]+)[0-9]+([\\-\\+])$")) && (m = p.matcher(action)) && m.find())
+                action = m.group(1) + m.group(2);
             else if ((p = Pattern.compile("^[a-z]_([0-9]+)_(.*)")) && (m = p.matcher(action)) && m.find())
                 action = m.group(1) + "_" + m.group(2);
             im = Image.createImage(fico + action + ".png");
@@ -178,7 +179,8 @@ self.go = function(obj) {
                                 sfx = "" + i;
                             } while (1);
                             var cont2 = this.createfolder(cont, fldname);
-                            if (dev.type == "DeviceRM" || dev.type == "DeviceAllOne" || dev.type == "DeviceCT10") {
+                            if (dev.type == "DeviceRM" || dev.type == "DeviceAllOne" || dev.type == "DeviceCT10" ||
+                                dev.type == "DeviceUpnpIRTA2" || dev.type == "DeviceUpnpIRRC" || dev.type == "DeviceSamsungCtl") {
                                 var remmap = {
                                     "sh": {
                                         "v": {},
