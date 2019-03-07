@@ -1,3 +1,4 @@
+self.superPassesFilter = self.passesFilter;
 self.passesFilter = function(epObj,ep,epdetail) {
-    return epObj.dur>30;
+    return self.superPassesFilter(epObj,ep,epdetail) && epObj.dur>30;
 };
